@@ -15,16 +15,20 @@ from datetime import datetime, timedelta, timezone
 # cuando un token no es válido.
 from jose import JWTError, jwt
 
-# De la otra librería instalada.
+# Librería bcrypt para hashear contraseñas de forma segura.
 # Se encarga de hashear contraseñas
 # y verificarlas. Nunca guardaremos
 # la contraseña real en la base de
 # datos, solo su hash.
-from passlib.context import CryptContext
+import bcrypt
+
+# Para extraer el token del header Authorization
+from fastapi import HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 # Importa la función de database.py
 # para conectarte a la DB.
-from database import get_connection
+from .database import get_connection
 
 
 
@@ -39,8 +43,8 @@ ALGORITHM = "HS256"
 # Tiempo de expiración del token (en horas)
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
-# Contexto para hashear contraseñas con bcrypt
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Esquema de seguridad HTTPBearer para extraer el token del header
+security = HTTPBearer()
 
 
 
@@ -50,13 +54,17 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
-    # Convierte la contraseña en un hash seguro
-    return pwd_context.hash(password)
+    # Convierte la contraseña en un hash seguro usando bcrypt directamente
+    # encode('utf-8') convierte el string a bytes (bcrypt necesita bytes)
+    # gensalt() genera una "sal" aleatoria para mayor seguridad
+    # decode('utf-8') convierte el resultado de bytes a string para guardar en la DB
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     # Compara la contraseña con el hash guardado en la DB
-    return pwd_context.verify(plain_password, hashed_password)
+    # checkpw devuelve True si coinciden, False si no
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 
 def get_user(username: str):
@@ -114,3 +122,29 @@ def verify_token(token: str):
     except JWTError:
         # Si el token no es válido o ha expirado devolvemos None
         return None
+
+
+def getCurrentUser(credentials: HTTPAuthorizationCredentials = Depends(security)):
+
+    # Función de dependencia que extrae y verifica el token JWT automáticamente.
+    # Se usa en los endpoints protegidos con Depends(getCurrentUser).
+    
+    # Esta función:
+    # 1. Extrae el token del header "Authorization: Bearer <token>"
+    # 2. Verifica que el token sea válido
+    # 3. Devuelve el usuario si todo está correcto
+    # 4. Lanza error 401 si el token es inválido
+
+    # credentials.credentials contiene el token (sin el prefijo "Bearer")
+    token = credentials.credentials
+    
+    # verify_token devuelve el usuario si el token es válido, o None si no lo es
+    user = verify_token(token)
+    
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Token inválido o expirado"
+        )
+    
+    return user

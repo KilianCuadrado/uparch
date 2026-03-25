@@ -38,8 +38,8 @@ import os
 import shutil
 
 # Importación de funciones de otros archivos
-from database import get_connection
-from auth import verify_token
+from .database import get_connection
+from .auth import getCurrentUser
 
 
 # ==========================
@@ -64,7 +64,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 @router.post("/upload")
 async def subir_archivo(
     archivo: UploadFile = File(...),
-    usuario: dict = Depends(verify_token)
+    usuario: dict = Depends(getCurrentUser)
     # Sube un archivo al servidor.
     # Requiere autenticación con token JWT.
 ):
@@ -116,7 +116,7 @@ async def subir_archivo(
 # Cuando el navegador hace GET a /files, se ejecuta esta función.
 # No tiene relación con la carpeta uploads/, es una URL virtual.
 @router.get("/files")
-async def listar_archivos(usuario: dict = Depends(verify_token)):
+async def listar_archivos(usuario: dict = Depends(getCurrentUser)):
 
     # Lista todos los archivos del usuario autenticado.
     # Devuelve solo los archivos del usuario logueado (no los de otros).
@@ -155,7 +155,7 @@ async def listar_archivos(usuario: dict = Depends(verify_token)):
 @router.get("/files/{id}")
 async def descargar_archivo(
         id: int,
-        usuario: dict = Depends(verify_token)
+        usuario: dict = Depends(getCurrentUser)
 ):
 
     # Descarga un archivo específico por su ID.
@@ -200,7 +200,7 @@ async def descargar_archivo(
 @router.delete("/files/{id}")
 async def eliminar_archivo(
         id: int,
-        usuario: dict = Depends(verify_token)
+        usuario: dict = Depends(getCurrentUser)
         # Elimina un archivo por su ID.
         # Solo permite eliminar archivos del usuario logueado.
 ):

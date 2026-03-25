@@ -6,14 +6,17 @@ A lightweight, self-hosted file storage service. Take control of your files — 
 
 ## 🚦 Project Status
 
-> **In active development — v1 not yet released.**
+> **Backend completed ✅ — Frontend in progress 🔧**
 
 | Feature | Status |
 |---|---|
-| User login | 🔧 In progress |
-| File upload | 🔧 In progress |
-| File listing | 🔧 In progress |
-| File download | 🔧 In progress |
+| User authentication (JWT) | ✅ Complete |
+| File upload | ✅ Complete |
+| File listing | ✅ Complete |
+| File download | ✅ Complete |
+| File deletion | ✅ Complete |
+| Frontend (UI) | 🔧 In progress |
+| Docker deployment | 📋 Pending |
 
 ---
 
@@ -46,21 +49,61 @@ A lightweight, self-hosted file storage service. Take control of your files — 
 
 ## 🚀 Installation
 
-> Prerequisites: [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) installed on your machine.
+### Development Setup
 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/KilianCuadrado/uparch.git
 cd uparch
 
-# 2. Start the application
-docker compose up -d
+# 2. Create virtual environment and install dependencies
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 
-# 3. Open your browser
-http://localhost:8000
+# 3. Initialize database
+python backend/database.py
+
+# 4. Start the development server
+uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+
+# 5. Open your browser
+# API Documentation: http://localhost:8000/docs
+# Frontend: http://localhost:8000 (coming soon)
 ```
 
-> ⚠️ Installation instructions will be updated as the project progresses.
+### Create First User
+
+```bash
+python3
+```
+
+```python
+from backend.database import get_connection
+from backend.auth import hash_password
+
+conn = get_connection()
+cursor = conn.cursor()
+
+username = "admin"
+password = "1234"
+hashed = hash_password(password)
+
+cursor.execute("INSERT INTO users (username, hashed_password) VALUES (?, ?)", (username, hashed))
+conn.commit()
+conn.close()
+exit()
+```
+
+### Docker Setup (Coming Soon)
+
+```bash
+# Build and run with Docker Compose
+docker compose up -d
+
+# Access the application
+http://localhost:8000
+```
 
 ---
 
