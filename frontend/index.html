@@ -1,10 +1,46 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UpArch - Login</title>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
 </head>
 <body>
 
+    <div class="login-container">
+        <div class="glass-panel login-card">
+            <div class="login-header">
+                <h1><i class="ph ph-hard-drives"></i> UpArch</h1>
+                <p>Tu almacenamiento privado en la nube local</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="input-group">
+                    <label for="username">Usuario</label>
+                    <input type="text" id="username" class="input-control" placeholder="admin" required autocomplete="username">
+                </div>
+                
+                <div class="input-group">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" class="input-control" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                
+                <button type="submit" id="loginBtn" class="btn btn-primary login-btn">
+                    <span>Iniciar Sesión</span>
+                    <i class="ph ph-arrow-right"></i>
+                    <div class="loader"></div>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    
 </body>
 </html>

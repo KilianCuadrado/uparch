@@ -1,10 +1,93 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UpArch - Archivos</title>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
 </head>
-<body>
+<body class="dashboard-body">
 
+    <div class="dashboard-layout">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i class="ph ph-hard-drives"></i> UpArch
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="#" class="sidebar-link active">
+                        <i class="ph ph-files"></i> Mis Archivos
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="user-profile">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-info">
+                    <div class="username" id="displayUsername" title="Cargando...">Cargando...</div>
+                </div>
+                <button id="logoutBtn" class="btn btn-ghost" title="Cerrar sesión">
+                    <i class="ph ph-sign-out"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <h2>Mis Archivos</h2>
+                <!-- We will duplicate the upload trigger here and in the drop zone for convenience -->
+                <button class="btn btn-primary" id="btnUploadHeader">
+                    <i class="ph ph-upload-simple"></i>
+                    Subir Archivo
+                </button>
+            </header>
+            
+            <!-- Upload Zone -->
+            <div class="upload-zone" id="uploadZone">
+                <i class="ph ph-cloud-arrow-up upload-icon"></i>
+                <h3>Arrastra y suelta aquí</h3>
+                <p>Formatos soportados: Todos. Tamaño máximo recomendado: 50MB</p>
+                <button class="btn btn-ghost" id="btnUploadZone">
+                    Explorar archivos
+                </button>
+                <input type="file" id="fileInput" name="file">
+            </div>
+            
+            <div class="upload-progress-container" id="uploadProgressContainer">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="uploadProgressFill"></div>
+                </div>
+                <div class="upload-progress-text" id="uploadProgressText">Subiendo... 0%</div>
+            </div>
+
+            <!-- Data List -->
+            <section class="files-container">
+                <header class="files-header">
+                    <span id="fileCountText">0 archivos listados</span>
+                </header>
+                
+                <div class="files-grid" id="filesGrid">
+                    <!-- Example Empty State Placeholder (Managed by JS) -->
+                    <div class="empty-state hidden-by-default" id="emptyState">
+                        <i class="ph ph-folder-open"></i>
+                        <h3>Sin archivos</h3>
+                        <p>No tienes ningún archivo almacenado todavía. ¡Empieza subiendo uno!</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    
 </body>
 </html>

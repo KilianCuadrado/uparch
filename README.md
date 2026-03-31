@@ -6,7 +6,7 @@ A lightweight, self-hosted file storage service. Take control of your files — 
 
 ## 🚦 Project Status
 
-> **Backend completed ✅ — Frontend in progress 🔧**
+> **Backend and Frontend completed ✅**
 
 | Feature | Status |
 |---|---|
@@ -15,7 +15,7 @@ A lightweight, self-hosted file storage service. Take control of your files — 
 | File listing | ✅ Complete |
 | File download | ✅ Complete |
 | File deletion | ✅ Complete |
-| Frontend (UI) | 🔧 In progress |
+| Frontend (UI) | ✅ Complete |
 | Docker deployment | 📋 Pending |
 
 ---
