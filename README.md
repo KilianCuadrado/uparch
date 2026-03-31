@@ -24,9 +24,11 @@ A lightweight, self-hosted file storage service. Take control of your files — 
 
 ### v1 (current)
 - 🔐 User login with username and password
+- 🎨 Modern Web Interface (Vanilla JS) with Drag & Drop
 - ⬆️ File upload
 - 📄 View uploaded files (list or grid)
 - ⬇️ File download
+- 🗑️ File deletion
 
 ### Planned
 - 📁 Folder creation and file organization
@@ -64,12 +66,16 @@ pip install -r requirements.txt
 # 3. Initialize database
 python backend/database.py
 
-# 4. Start the development server
+# 4. Start the backend development server
 uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 
-# 5. Open your browser
+# 5. In a new terminal, serve the frontend
+cd frontend
+python3 -m http.server 8080
+
+# 6. Open your browser
+# Frontend: http://localhost:8080
 # API Documentation: http://localhost:8000/docs
-# Frontend: http://localhost:8000 (coming soon)
 ```
 
 ### Create First User
