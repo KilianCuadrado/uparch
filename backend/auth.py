@@ -28,7 +28,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 # Importa la función de database.py
 # para conectarte a la DB.
-from .database import get_connection
+from database import get_connection
 
 
 

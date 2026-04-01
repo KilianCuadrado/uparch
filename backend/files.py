@@ -38,8 +38,8 @@ import os
 import shutil
 
 # Importación de funciones de otros archivos
-from .database import get_connection
-from .auth import getCurrentUser
+from database import get_connection
+from auth import getCurrentUser
 
 
 # ==========================
@@ -49,8 +49,9 @@ from .auth import getCurrentUser
 # Crear el router para las rutas de archivos
 router = APIRouter()
 
-# Carpeta donde se guardarán los archivos
-UPLOAD_DIR = "uploads"
+# Carpeta donde se guardarán los archivos. Se puede configurar mediante variables de entorno para Docker.
+# Por defecto asume que existe en un nivel superior a la carpeta backend.
+UPLOAD_DIR = os.getenv("UPARCH_UPLOAD_DIR", os.path.join(os.path.dirname(__file__), "..", "uploads"))
 
 # Asegurar que la carpeta existe
 os.makedirs(UPLOAD_DIR, exist_ok=True)

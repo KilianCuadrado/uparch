@@ -1,0 +1,29 @@
+# === ARCHIVO DOCKER COMPOSE ===
+# Este archivo define cómo se van a ejecutar nuestros servicios juntos.
+
+services:
+  # == 1. SERVICIO DE BACKEND ==
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    # Variables de entorno: le decimos exactamente dónde guardar los datos
+    environment:
+      - UPARCH_DB_PATH=/app/data/uparch.db
+      - UPARCH_UPLOAD_DIR=/app/uploads
+    # Ambos volúmenes son "nombrados": Docker los gestiona solo, sin problemas de permisos
+    volumes:
+      - db_data:/app/data
+      - uploads_data:/app/uploads
+
+  # == 2. SERVICIO DE FRONTEND ==
+  frontend:
+    build: ./frontend
+    ports:
+      - "5000:80"
+
+# == VOLÚMENES NOMBRADOS ==
+# Docker los crea y gestiona automáticamente con los permisos correctos
+volumes:
+  db_data:
+  uploads_data:

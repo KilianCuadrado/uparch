@@ -18,13 +18,13 @@ from pydantic import BaseModel
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 # Importamos las funciones de autenticación que ya creaste
-from .auth import authenticate_user, create_access_token, verify_token
+from auth import authenticate_user, create_access_token, verify_token
 
 # Importamos el router de files que ya tiene todos los endpoints CRUD de archivos
-from .files import router as files_router
+from files import router as files_router
 
 # Importamos la función para inicializar la base de datos
-from .database import init_db
+from database import init_db
 
 
 # ================================

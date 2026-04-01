@@ -10,8 +10,9 @@ import os
 # === VARIABLES GLOBALES ===
 # ==========================
 
-# os.path.dirname(__file__) obtiene la carpeta donde está el archivo, y con .. sube un nivel para guardar la base de datos en la raíz del proyecto.
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "uparch.db")
+# Permite usar una variable de entorno para definir la ruta de la base de datos (muy útil para Docker).
+# Por defecto (si no hay variable), asume que la base de datos está un nivel arriba de esta carpeta.
+DB_PATH = os.getenv("UPARCH_DB_PATH", os.path.join(os.path.dirname(__file__), "..", "uparch.db"))
 
 
 # =================
@@ -56,6 +57,15 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
     """)
+
+    # Verificar si existe algún usuario, si no, crear el administrador por defecto
+    cursor.execute("SELECT COUNT(*) as count FROM users")
+    result = cursor.fetchone()
+    if result["count"] == 0:
+        from auth import hash_password
+        hashed = hash_password("1234")
+        cursor.execute("INSERT INTO users (username, hashed_password) VALUES (?, ?)", ("admin", hashed))
+        print("👤 Creado usuario administrador por defecto (admin:1234)")
 
     # Guardar los cambios en la base de datos
     conn.commit()

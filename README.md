@@ -51,65 +51,46 @@ A lightweight, self-hosted file storage service. Take control of your files — 
 
 ## 🚀 Installation
 
-### Development Setup
+### 🐳 Using Docker (Recommended)
+
+The easiest way to run UpArch is using Docker. This ensures that the frontend and backend are completely isolated and ready to go in seconds.
 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/KilianCuadrado/uparch.git
 cd uparch
 
-# 2. Create virtual environment and install dependencies
+# 2. Build and start the services
+docker compose up --build -d
+```
+
+Once running, access the application at:
+- **Frontend (Web):** http://localhost:5000
+- **API Documentation:** http://localhost:8000/docs
+
+> **💡 Default Account:** By default, an initial administrator account is automatically generated for you.  
+> **Username:** `admin`  
+> **Password:** `1234`
+
+### 🛠️ Manual Development Setup (Without Docker)
+
+<details>
+<summary>Click to view manual installation steps</summary>
+
+```bash
+# 1. Start the backend
+cd backend
 python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+python database.py
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
-# 3. Initialize database
-python backend/database.py
-
-# 4. Start the backend development server
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
-
-# 5. In a new terminal, serve the frontend
+# 2. Serve the frontend (in a new terminal)
 cd frontend
 python3 -m http.server 8080
-
-# 6. Open your browser
-# Frontend: http://localhost:8080
-# API Documentation: http://localhost:8000/docs
 ```
-
-### Create First User
-
-```bash
-python3
-```
-
-```python
-from backend.database import get_connection
-from backend.auth import hash_password
-
-conn = get_connection()
-cursor = conn.cursor()
-
-username = "admin"
-password = "1234"
-hashed = hash_password(password)
-
-cursor.execute("INSERT INTO users (username, hashed_password) VALUES (?, ?)", (username, hashed))
-conn.commit()
-conn.close()
-exit()
-```
-
-### Docker Setup (Coming Soon)
-
-```bash
-# Build and run with Docker Compose
-docker compose up -d
-
-# Access the application
-http://localhost:8000
-```
+</details>
 
 ---
 
