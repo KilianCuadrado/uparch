@@ -16,13 +16,13 @@ A lightweight, self-hosted file storage service. Take control of your files — 
 | File download | ✅ Complete |
 | File deletion | ✅ Complete |
 | Frontend (UI) | ✅ Complete |
-| Docker deployment | 📋 Pending |
+| Docker deployment | ✅ Complete |
 
 ---
 
 ## ✨ Features
 
-### v1 (current)
+### v1 Complete
 - 🔐 User login with username and password
 - 🎨 Modern Web Interface (Vanilla JS) with Drag & Drop
 - ⬆️ File upload
