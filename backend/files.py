@@ -19,7 +19,7 @@
 
 # - Depends: Sirve para "inyectar" dependencias. Por ejemplo,
 # para decir "esta ruta necesita que el token sea válido", usas Depends(verify_token).
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status
 
 # - HTTPBearer: Es un esquema de seguridad que espera un token en el header
 # Authorization: Bearer <tu-token>. Es el estándar para JWT.
@@ -66,9 +66,25 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 async def subir_archivo(
     archivo: UploadFile = File(...),
     usuario: dict = Depends(getCurrentUser)
+    
     # Sube un archivo al servidor.
     # Requiere autenticación con token JWT.
 ):
+    # Validar tamaño de archivo (10MB = 10 * 1024 * 1024 bytes)
+    MAX_FILE_SIZE = 10 * 1024 * 1024
+    # Obtener el tamaño sin cargar todo el archivo en memoria
+    current_position = archivo.file.tell()
+    archivo.file.seek(0, os.SEEK_END)
+    file_size = archivo.file.tell()
+    archivo.file.seek(current_position)
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+             status_code=413,
+             detail="Archivo demasiado grande. Máximo: 10MB"
+         )
+    # Resetear el puntero del archivo para guardarlo después
+    archivo.file.seek(0)
+
 
     # 1. Validar que se ha subido un archivo
     if not archivo or not archivo.filename:
