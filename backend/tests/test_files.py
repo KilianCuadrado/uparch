@@ -1,8 +1,5 @@
-import pytest
 from fastapi.testclient import TestClient
 from main import app
-import os
-from pathlib import Path
 
 client = TestClient(app)
 
