@@ -25,7 +25,7 @@ A lightweight, self-hosted file storage service. Take control of your files — 
 ### v1 Complete
 - 🔐 User login with username and password
 - 🎨 Modern Web Interface (Vanilla JS) with Drag & Drop
-- ⬆️ File upload(Limited to 10MB)
+- ⬆️ File upload (Limited to 10MB)
 - 📄 View uploaded files (list or grid)
 - ⬇️ File download
 - 🗑️ File deletion
