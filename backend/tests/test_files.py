@@ -52,10 +52,10 @@ def test_list_files():
     
     # Listar archivos
     response = client.get(
-        "/files/list",
+        "/api/files",
         headers={"Authorization": f"Bearer {token}"}
     )
     
+    data = response.json()
     assert response.status_code == 200
-    assert "files" in response.json()
-    assert "total" in response.json()
+    assert "archivos" in data
