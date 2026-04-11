@@ -66,9 +66,25 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 async def subir_archivo(
     archivo: UploadFile = File(...),
     usuario: dict = Depends(getCurrentUser)
+    
     # Sube un archivo al servidor.
     # Requiere autenticación con token JWT.
 ):
+    # Validar tamaño de archivo (10MB = 10 * 1024 * 1024 bytes)
+    MAX_FILE_SIZE = 10 * 1024 * 1024
+    
+    # Leer el archivo para obtener su tamaño
+    file_content = await file.read()
+    file_size = len(file_content)
+    
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Archivo demasiado grande. Máximo: 10MB"
+        )
+    
+    # Resetear el puntero del archivo para guardarlo después
+    await file.seek(0)
 
     # 1. Validar que se ha subido un archivo
     if not archivo or not archivo.filename:
