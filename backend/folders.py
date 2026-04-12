@@ -150,10 +150,10 @@ async def list_folders(
         for row in cursor.fetchall():
             folder_id = row["id"]
             
-            # Contar archivos en este folder
+            # Contar archivos en este folder, aislando por usuario
             cursor.execute(
-                "SELECT COUNT(*) as count FROM files WHERE folder_id = ?",
-                (folder_id,)
+                "SELECT COUNT(*) as count FROM files WHERE folder_id = ? AND user_id = ?",
+                (folder_id, current_user["id"])
             )
             file_count_row = cursor.fetchone()
             file_count = file_count_row["count"] if file_count_row else 0
