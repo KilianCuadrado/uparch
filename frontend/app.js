@@ -5,9 +5,9 @@
 const API_BASE = 'http://localhost:8000'; // Conexion al backend
 const MAX_FILE_SIZE_MB = 50;
 
-// ==========================================
-// 1. Utilities (Toasts, Formatting, etc)
-// ==========================================
+// ========================================
+// 1. Utilities (Toasts, Formatting, etc) =
+// ========================================
 
 function showToast(title, message, type = 'info') {
     const container = document.getElementById('toastContainer');
@@ -65,9 +65,9 @@ function getFileIconClass(filename) {
     return 'ph-file';
 }
 
-// ==========================================
-// 2. Auth Service
-// ==========================================
+// =================
+// 2. Auth Service =
+// =================
 
 const Auth = {
     getToken() {
@@ -118,26 +118,79 @@ const Auth = {
     }
 };
 
-// ==========================================
-// 3. File Service
-// ==========================================
+// ============================
+// 3. Folders Service & State =
+// ============================
+
+let currentFolderId = null;
+let folderPath = [{ id: null, name: 'Raíz' }];
+
+const Folders = {
+    getHeaders() {
+        return { 'Authorization': `Bearer ${Auth.getToken()}`, 'Content-Type': 'application/json' };
+    },
+    
+    async list(parentId = null) {
+        const url = parentId 
+            ? `${API_BASE}/api/folders/list?parent_id=${parentId}`
+            : `${API_BASE}/api/folders/list`;
+        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${Auth.getToken()}` } });
+        if (!res.ok) throw new Error('Error al listar carpetas');
+        return res.json();
+    },
+
+    async create(name, parentId = null) {
+        const res = await fetch(`${API_BASE}/api/folders/create`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify({ name, parent_id: parentId })
+        });
+        if (!res.ok) {
+            const error = await res.json();
+            throw new Error(error.detail || 'Error al crear carpeta');
+        }
+        return res.json();
+    },
+
+    async delete(id) {
+        const res = await fetch(`${API_BASE}/api/folders/delete/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
+        });
+        if (!res.ok) {
+            const error = await res.json();
+            throw new Error(error.detail || 'Error al eliminar carpeta');
+        }
+        return res.json();
+    }
+};
+
+// =================
+// 4. File Service =
+// =================
 
 const Files = {
     getHeaders() {
         return { 'Authorization': `Bearer ${Auth.getToken()}` };
     },
 
-    async list() {
-        const res = await fetch(`${API_BASE}/api/files`, { headers: this.getHeaders() });
+    async list(folderId = null) {
+        const url = folderId 
+            ? `${API_BASE}/api/files?folder_id=${folderId}`
+            : `${API_BASE}/api/files`;
+        const res = await fetch(url, { headers: this.getHeaders() });
         if (!res.ok) throw new Error('Error al listar archivos');
         const data = await res.json();
         return data.archivos; // Backend returns {"archivos": [...]}
     },
 
-    async upload(fileObj, onProgress) {
+    async upload(fileObj, folderId = null, onProgress) {
         const formData = new FormData();
         // El backend espera el nombre 'archivo' en la petición de form data (def subir_archivo(archivo: UploadFile = File(...)))
         formData.append('archivo', fileObj);
+        if (folderId !== null) {
+            formData.append('folder_id', folderId);
+        }
 
         // Fetch does not natively support upload progress without XMLHttpRequest, 
         // so we fake a tiny progressive bar or just await if it's small, 
@@ -191,9 +244,9 @@ const Files = {
     }
 };
 
-// ==========================================
-// 4. Page Routing / Initialization
-// ==========================================
+// ==================================
+// 4. Page Routing / Initialization =
+// ==================================
 
 document.addEventListener('DOMContentLoaded', async () => {
     
@@ -254,31 +307,132 @@ async function initDashboardScreen() {
 
     // Setup Drag&Drop and Upload
     setupUploadHandlers();
+
+    // Bind Create Folder
+    const btnCreateFolder = document.getElementById('btnCreateFolder');
+    if (btnCreateFolder) {
+        btnCreateFolder.addEventListener('click', async () => {
+            const name = prompt('Nombre de la nueva carpeta:');
+            if (name && name.trim()) {
+                try {
+                    await Folders.create(name.trim(), currentFolderId);
+                    showToast('¡Éxito!', 'Carpeta creada', 'success');
+                    await refreshFiles();
+                } catch (e) {
+                    showToast('Error', e.message, 'error');
+                }
+            }
+        });
+    }
 }
 
-// ==========================================
-// 5. Dashboard Specific Logic
-// ==========================================
+// ============================= 
+// 5. Dashboard Specific Logic =
+// =============================
 
 async function refreshFiles() {
     const grid = document.getElementById('filesGrid');
     const emptyState = document.getElementById('emptyState');
     const countText = document.getElementById('fileCountText');
+    const breadcrumbs = document.getElementById('breadcrumbs');
+    
+    // Update breadcrumbs
+    if (breadcrumbs) {
+        breadcrumbs.innerHTML = '';
+        folderPath.forEach((step, index) => {
+            const a = document.createElement('a');
+            a.className = 'breadcrumb-link';
+            a.href = '#';
+            a.textContent = step.name;
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                folderPath = folderPath.slice(0, index + 1);
+                currentFolderId = step.id;
+                refreshFiles();
+            });
+            breadcrumbs.appendChild(a);
+            
+            if (index < folderPath.length - 1) {
+                const sep = document.createElement('span');
+                sep.textContent = ' > ';
+                sep.className = 'breadcrumb-separator';
+                breadcrumbs.appendChild(sep);
+            }
+        });
+    }
     
     try {
-        const files = await Files.list();
+        const [foldersData, files] = await Promise.all([
+            Folders.list(currentFolderId),
+            Files.list(currentFolderId)
+        ]);
+        
+        const folders = foldersData.folders;
         
         // Clear current elements except empty state
         Array.from(grid.children).forEach(child => {
             if (child.id !== 'emptyState') child.remove();
         });
 
-        countText.textContent = `${files.length} archivo(s)`;
+        const totalItems = folders.length + files.length;
+        countText.textContent = `${totalItems} elemento(s)`;
 
-        if (files.length === 0) {
+        if (totalItems === 0) {
             emptyState.style.display = 'flex';
         } else {
             emptyState.style.display = 'none';
+            
+            // Render folders first
+            folders.forEach(f => {
+                const card = document.createElement('div');
+                card.className = 'file-card folder-card';
+                card.innerHTML = `
+                    <i class="ph ph-folder file-icon text-warning"></i>
+                    <div class="file-info">
+                        <div class="file-name" title="${f.name}">${f.name}</div>
+                        <div class="file-meta">
+                            <span>Carpeta</span>
+                            <span>${new Date(f.created_at).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-ghost open-btn" title="Abrir"><i class="ph ph-folder-open"></i></button>
+                        <button class="btn btn-danger delete-btn" title="Eliminar"><i class="ph ph-trash"></i></button>
+                    </div>
+                `;
+
+                // Bind actions
+                card.querySelector('.open-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    folderPath.push({ id: f.id, name: f.name });
+                    currentFolderId = f.id;
+                    refreshFiles();
+                });
+                
+                // Double click on folder
+                card.addEventListener('dblclick', () => {
+                    folderPath.push({ id: f.id, name: f.name });
+                    currentFolderId = f.id;
+                    refreshFiles();
+                });
+
+                card.querySelector('.delete-btn').addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    if (confirm(`¿Estás seguro de eliminar la carpeta "${f.name}"? Debe estar vacía.`)) {
+                        try {
+                            await Folders.delete(f.id);
+                            showToast('Eliminada', 'Carpeta eliminada con éxito', 'success');
+                            await refreshFiles();
+                        } catch (err) {
+                            showToast('Error', err.message, 'error');
+                        }
+                    }
+                });
+
+                grid.appendChild(card);
+            });
+
+            // Render files
             files.forEach(f => {
                 const card = document.createElement('div');
                 card.className = 'file-card';
@@ -322,11 +476,7 @@ async function refreshFiles() {
                         try {
                             await Files.delete(f.id);
                             showToast('Eliminado', 'Archivo eliminado con éxito', 'success');
-                            card.remove();
-                            // Update count text slightly hacky but works
-                            const currentList = Array.from(grid.children).filter(c => c.id !== 'emptyState');
-                            countText.textContent = `${currentList.length} archivo(s)`;
-                            if (currentList.length === 0) emptyState.style.display = 'flex';
+                            await refreshFiles();
                         } catch (e) {
                             showToast('Error', 'No se pudo eliminar el archivo', 'error');
                         }
@@ -337,7 +487,7 @@ async function refreshFiles() {
             });
         }
     } catch (e) {
-        showToast('Error', 'No se pudieron cargar los archivos', 'error');
+        showToast('Error', 'No se pudieron cargar los archivos o carpetas', 'error');
     }
 }
 
@@ -405,7 +555,7 @@ function setupUploadHandlers() {
         progressText.textContent = `Subiendo... ${file.name}`;
 
         try {
-            await Files.upload(file, (perc) => {
+            await Files.upload(file, currentFolderId, (perc) => {
                 progressFill.style.width = `${perc}%`;
             });
             showToast('¡Éxito!', 'Archivo subido correctamente', 'success');
