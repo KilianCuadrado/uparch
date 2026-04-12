@@ -5,9 +5,9 @@
 const API_BASE = 'http://localhost:8000'; // Conexion al backend
 const MAX_FILE_SIZE_MB = 50;
 
-// ==========================================
-// 1. Utilities (Toasts, Formatting, etc)
-// ==========================================
+// ========================================
+// 1. Utilities (Toasts, Formatting, etc) =
+// ========================================
 
 function showToast(title, message, type = 'info') {
     const container = document.getElementById('toastContainer');
