@@ -26,6 +26,8 @@ DB_PATH = os.getenv("UPARCH_DB_PATH", os.path.join(os.path.dirname(__file__), ".
 def get_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    # Habilitar soporte de claves foráneas (necesario para ON DELETE CASCADE/SET NULL)
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
@@ -73,19 +75,6 @@ def init_db():
             FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE SET NULL
         )
     """)
-
-    cursor.execute("""
-            CREATE TABLE IF NOT EXISTS folders (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                name TEXT NOT NULL,
-                parent_id INTEGER,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id),
-                FOREIGN KEY (parent_id) REFERENCES folders(id) ON DELETE CASCADE,
-                UNIQUE(user_id, name, parent_id)
-            )
-        """)
 
     # Verificar si existe algún usuario, si no, crear el administrador por defecto
     cursor.execute("SELECT COUNT(*) as count FROM users")
