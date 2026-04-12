@@ -74,19 +74,6 @@ def init_db():
         )
     """)
 
-    cursor.execute("""
-            CREATE TABLE IF NOT EXISTS folders (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                name TEXT NOT NULL,
-                parent_id INTEGER,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id),
-                FOREIGN KEY (parent_id) REFERENCES folders(id) ON DELETE CASCADE,
-                UNIQUE(user_id, name, parent_id)
-            )
-        """)
-
     # Verificar si existe algún usuario, si no, crear el administrador por defecto
     cursor.execute("SELECT COUNT(*) as count FROM users")
     result = cursor.fetchone()
