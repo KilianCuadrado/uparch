@@ -4,6 +4,3 @@ python-jose[cryptography]
 uvicorn[standard]
 pydantic>=2.0.0
 python-multipart
-pytest
-pytest-cov
-httpx
