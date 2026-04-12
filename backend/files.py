@@ -67,11 +67,10 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 async def subir_archivo(
     archivo: UploadFile = File(...),
     folder_id: Optional[int] = Form(None),
-    usuario: dict = Depends(getCurrentUser)
-    
+    usuario: dict = Depends(getCurrentUser),
+):
     # Sube un archivo al servidor.
     # Requiere autenticación con token JWT.
-):
     # Validar tamaño de archivo (10MB = 10 * 1024 * 1024 bytes)
     MAX_FILE_SIZE = 10 * 1024 * 1024
     # Obtener el tamaño sin cargar todo el archivo en memoria
