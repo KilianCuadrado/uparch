@@ -42,12 +42,23 @@
         <main class="main-content">
             <header class="page-header">
                 <h2>Mis Archivos</h2>
-                <!-- We will duplicate the upload trigger here and in the drop zone for convenience -->
-                <button class="btn btn-primary" id="btnUploadHeader">
-                    <i class="ph ph-upload-simple"></i>
-                    Subir Archivo
-                </button>
+                <div class="header-actions">
+                    <button class="btn btn-outline" id="btnCreateFolder">
+                        <i class="ph ph-folder-plus"></i>
+                        Crear Carpeta
+                    </button>
+                    <!-- We will duplicate the upload trigger here and in the drop zone for convenience -->
+                    <button class="btn btn-primary" id="btnUploadHeader">
+                        <i class="ph ph-upload-simple"></i>
+                        Subir Archivo
+                    </button>
+                </div>
             </header>
+
+            <!-- Breadcrumbs -->
+            <nav class="breadcrumbs" id="breadcrumbs">
+                <a href="#" class="breadcrumb-link" data-folder-id="">Raíz</a>
+            </nav>
             
             <!-- Upload Zone -->
             <div class="upload-zone" id="uploadZone">

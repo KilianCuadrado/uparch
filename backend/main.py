@@ -81,7 +81,7 @@ app.add_middleware(
     allow_headers=["*"],  # Permite todos los headers (incluido Authorization)
 )
 # Explicación:
-# ¿Por qué necesitas CORS?
+# ¿Por qué CORS?
 # Imagina que tu frontend está en http://localhost:5500 (puerto del HTML) y tu backend
 # en http://localhost:8000. El navegador ve que son "orígenes diferentes" y bloquea la
 # comunicación por seguridad.
@@ -218,16 +218,17 @@ async def verify(user: dict = Depends(getCurrentUser)):
 # === INCLUIR ROUTERS EXTERNOS ===
 # ================================
 
-# Aquí incluimos el router de files.py, que contiene todos los endpoints
-# para subir, listar, descargar y eliminar archivos.
-
-# El prefix="/api" significa que todas las rutas de files_router
-# estarán bajo /api/... (ejemplo: /api/upload, /api/files, etc.)
+# Aquí incluimos el router de files.py y folders.py
+from folders import router as folders_router
 
 app.include_router(
     files_router,
     prefix="/api",
-    tags=["files"]  # Agrupa estos endpoints en la documentación automática
+    tags=["files"]
+)
+
+app.include_router(
+    folders_router
 )
 
 # ================================

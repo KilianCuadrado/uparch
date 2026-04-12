@@ -1,0 +1,201 @@
+# .github/workflows/ci.yml
+# Este archivo va en: .github/workflows/ci.yml
+
+name: CI/CD - UpArch
+
+# Cuándo se ejecuta este workflow
+on:
+  # En cada push a develop o main
+  push:
+    branches: [develop, main]
+  
+  # En cada Pull Request hacia develop o main
+  pull_request:
+    branches: [develop, main]
+
+# Variables de entorno globales
+env:
+  PYTHON_VERSION: '3.11'
+
+# Jobs a ejecutar
+jobs:
+  # ============================================================================
+  # JOB 1: LINTING Y CODE QUALITY
+  # ============================================================================
+  lint:
+    name: 🔍 Linting y Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'  # Cachea dependencias para ir más rápido
+      
+      - name: 📦 Instalar dependencias de linting
+        run: |
+          pip install flake8 black isort
+      
+      - name: 🔍 Ejecutar flake8
+        run: |
+          cd backend
+          # E9,F63,F7,F82: errores críticos de sintaxis
+          # E501: línea demasiado larga (warning, no error)
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Reporte completo (permite fallos menores)
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      
+      - name: ✨ Verificar formato con black
+        run: |
+          cd backend
+          black --check --diff .
+      
+      - name: 📋 Verificar imports con isort
+        run: |
+          cd backend
+          isort --check-only --diff .
+
+  # ============================================================================
+  # JOB 2: TESTS UNITARIOS
+  # ============================================================================
+  test:
+    name: 🧪 Tests Backend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: 📦 Instalar dependencias
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pytest pytest-cov httpx
+      
+      - name: 🧪 Ejecutar tests con coverage
+        run: |
+          cd backend
+          pytest --cov=. --cov-report=term-missing --cov-report=xml -v
+      
+      - name: 📊 Upload coverage a Codecov (opcional)
+        uses: codecov/codecov-action@v3
+        if: github.event_name == 'push'  # Solo en push, no en PR
+        with:
+          file: ./backend/coverage.xml
+          fail_ci_if_error: false  # No fallar si Codecov falla
+
+  # ============================================================================
+  # JOB 3: BUILD DOCKER IMAGES
+  # ============================================================================
+  docker-build:
+    name: 🐳 Docker Build Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+      
+      - name: 🐳 Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: 🔨 Build Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false  # Solo build, no push
+          tags: uparch-backend:test
+          cache-from: type=gha  # Usa GitHub Actions cache
+          cache-to: type=gha,mode=max
+      
+      - name: 🔨 Build Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          tags: uparch-frontend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: ✅ Verificar docker-compose config
+        run: |
+          docker compose config
+
+  # ============================================================================
+  # JOB 4: SECURITY SCAN (opcional pero recomendado)
+  # ============================================================================
+  security:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: 📦 Instalar safety
+        run: pip install safety
+      
+      - name: 🔒 Scan de dependencias con safety
+        run: |
+          cd backend
+          # Verifica vulnerabilidades conocidas en dependencias
+          safety check --file requirements.txt --output json || true
+      
+      - name: 🔍 Scan con Trivy (Docker)
+        uses: aquasecurity/trivy-action@v0.29.0
+        with:
+          scan-type: 'fs'
+          scan-ref: './backend'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: 📤 Upload Trivy results a GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+# ============================================================================
+# EJEMPLOS DE JOBS ADICIONALES (comentados)
+# ============================================================================
+
+  # Descomentar para activar:
+  
+  # deploy-staging:
+  #   name: 🚀 Deploy to Staging
+  #   runs-on: ubuntu-latest
+  #   needs: [lint, test, docker-build]  # Solo si todos pasan
+  #   if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+  #   
+  #   steps:
+  #     - name: Deploy
+  #       run: |
+  #         echo "Aquí irían comandos de deploy a staging"
+  #         # Ej: ssh al servidor, docker pull, docker-compose up
+  
+  # deploy-production:
+  #   name: 🚀 Deploy to Production
+  #   runs-on: ubuntu-latest
+  #   needs: [lint, test, docker-build]
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   
+  #   steps:
+  #     - name: Deploy
+  #       run: |
+  #         echo "Aquí irían comandos de deploy a producción"
