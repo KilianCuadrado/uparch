@@ -3,7 +3,7 @@
  */
 
 const API_BASE = 'http://localhost:8000'; // Conexion al backend
-const MAX_FILE_SIZE_MB = 50;
+const MAX_FILE_SIZE_MB = 10;
 
 // ========================================
 // 1. Utilities (Toasts, Formatting, etc) =
