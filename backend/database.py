@@ -26,6 +26,8 @@ DB_PATH = os.getenv("UPARCH_DB_PATH", os.path.join(os.path.dirname(__file__), ".
 def get_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    # Habilitar soporte de claves foráneas (necesario para ON DELETE CASCADE/SET NULL)
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
