@@ -94,6 +94,22 @@ async def subir_archivo(
     # 2. Obtener el username del usuario
     username = usuario["username"]
 
+    # 2b. Validar que folder_id pertenece al usuario autenticado
+    if folder_id is not None:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id FROM folders WHERE id = ? AND user_id = ?",
+            (folder_id, usuario["id"])
+        )
+        if not cursor.fetchone():
+            conn.close()
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Folder no encontrado"
+            )
+        conn.close()
+
     # 3. Crear carpeta del usuario (evitar sobrescribir archivos de otros usuarios)
     user_dir = os.path.join(UPLOAD_DIR, username)
     os.makedirs(user_dir, exist_ok=True)
