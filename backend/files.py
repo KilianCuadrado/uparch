@@ -21,11 +21,11 @@ import os
 import shutil
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse
-
 from auth import getCurrentUser
 from database import get_connection
+from fastapi import (APIRouter, Depends, File, Form, HTTPException, UploadFile,
+                     status)
+from fastapi.responses import FileResponse
 
 # ==========================
 # === VARIABLES GLOBALES ===

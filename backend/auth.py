@@ -14,20 +14,17 @@ from datetime import datetime, timedelta, timezone
 # la contraseña real en la base de
 # datos, solo su hash.
 import bcrypt
-
+# Importa la función de database.py
+# para conectarte a la DB.
+from database import get_connection
 # Para extraer el token del header Authorization
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-
 # De la librería que instalada antes.
 # jwt crea y verifica tokens,
 # JWTError es el error que lanza
 # cuando un token no es válido.
 from jose import JWTError, jwt
-
-# Importa la función de database.py
-# para conectarte a la DB.
-from database import get_connection
 
 # ==========================
 # === VARIABLES GLOBALES ===

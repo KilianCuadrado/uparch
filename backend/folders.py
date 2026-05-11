@@ -3,11 +3,10 @@
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
-
 from auth import getCurrentUser, verify_token
 from database import get_connection
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 
 # ========
 # ROUTER =

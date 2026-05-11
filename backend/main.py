@@ -2,31 +2,27 @@
 # === IMPORTS NECESARIOS ===
 # ==========================
 
+import sqlite3
 # Para manejar el ciclo de vida de la aplicación (startup/shutdown)
 from contextlib import asynccontextmanager
-import sqlite3
 
+# Importamos las funciones de autenticación que ya creaste
+from auth import (authenticate_user, create_access_token, hash_password,
+                  verify_token)
+# Importamos la función para inicializar la base de datos
+from database import get_connection, init_db
 # FastAPI es el framework principal para crear la API
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-
 # HTTPBearer y HTTPAuthorizationCredentials sirven para extraer el token JWT
 # del header "Authorization: Bearer <token>"
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-
-# Pydantic se usa para validar los datos que llegan del frontend
-# BaseModel es como un "molde" para definir qué campos esperas
-from pydantic import BaseModel
-
-# Importamos las funciones de autenticación que ya creaste
-from auth import authenticate_user, create_access_token, hash_password, verify_token
-
-# Importamos la función para inicializar la base de datos
-from database import get_connection, init_db
-
 # Importamos el router de files que ya tiene todos los endpoints CRUD de archivos
 from files import router as files_router
 from folders import router as folders_router
+# Pydantic se usa para validar los datos que llegan del frontend
+# BaseModel es como un "molde" para definir qué campos esperas
+from pydantic import BaseModel
 
 # ================================
 # === EVENTO AL INICIAR LA APP ===
