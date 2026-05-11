@@ -2,7 +2,6 @@
 # === IMPORTS NECESARIOS ===
 # ==========================
 
-
 # Para manejar fechas y tiempos. Los JWT
 # tienen una fecha de expiración,
 # con timedelta defines cuánto tiempo dura

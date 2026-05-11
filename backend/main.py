@@ -4,6 +4,7 @@
 
 # Para manejar el ciclo de vida de la aplicación (startup/shutdown)
 from contextlib import asynccontextmanager
+import sqlite3
 
 # FastAPI es el framework principal para crear la API
 from fastapi import Depends, FastAPI, HTTPException
@@ -18,14 +19,14 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 # Importamos las funciones de autenticación que ya creaste
-from auth import authenticate_user, create_access_token, verify_token, hash_password
-import sqlite3
+from auth import authenticate_user, create_access_token, hash_password, verify_token
 
 # Importamos la función para inicializar la base de datos
-from database import init_db, get_connection
+from database import get_connection, init_db
 
 # Importamos el router de files que ya tiene todos los endpoints CRUD de archivos
 from files import router as files_router
+from folders import router as folders_router
 
 # ================================
 # === EVENTO AL INICIAR LA APP ===
@@ -249,8 +250,6 @@ async def verify(user: dict = Depends(getCurrentUser)):
 # ================================
 
 # Aquí incluimos el router de files.py y folders.py
-from folders import router as folders_router
-
 app.include_router(files_router, prefix="/api", tags=["files"])
 # Also expose the same file routes under `/files/*` to match existing tests
 app.include_router(files_router, prefix="/files", tags=["files-alias"])

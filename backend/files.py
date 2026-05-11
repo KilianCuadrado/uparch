@@ -19,22 +19,13 @@
 
 import os
 import shutil
-
-# - Depends: Sirve para "inyectar" dependencias. Por ejemplo,
-# para decir "esta ruta necesita que el token sea válido", usas Depends(verify_token).
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 
-# - HTTPAuthorizationCredentials: Son las credenciales que extrae (el token).
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-
 from auth import getCurrentUser
 from database import get_connection
-
-# - HTTPBearer: Es un esquema de seguridad que espera un token en el header
-# Authorization: Bearer <tu-token>. Es el estándar para JWT.
 
 
 # ==========================
