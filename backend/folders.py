@@ -1,13 +1,13 @@
 # Módulo para gestionar folders (carpetas) en UpArch.
 
+from datetime import datetime
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from typing import List, Optional
-from datetime import datetime
 
+from auth import getCurrentUser, verify_token
 from database import get_connection
-from auth import verify_token, getCurrentUser
 
 # ========
 # ROUTER =

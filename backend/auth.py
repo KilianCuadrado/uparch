@@ -9,12 +9,6 @@
 # el token (por ejemplo 24 horas).
 from datetime import datetime, timedelta, timezone
 
-# De la librería que instalada antes.
-# jwt crea y verifica tokens,
-# JWTError es el error que lanza
-# cuando un token no es válido.
-from jose import JWTError, jwt
-
 # Librería bcrypt para hashear contraseñas de forma segura.
 # Se encarga de hashear contraseñas
 # y verificarlas. Nunca guardaremos
@@ -23,8 +17,14 @@ from jose import JWTError, jwt
 import bcrypt
 
 # Para extraer el token del header Authorization
-from fastapi import HTTPException, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+# De la librería que instalada antes.
+# jwt crea y verifica tokens,
+# JWTError es el error que lanza
+# cuando un token no es válido.
+from jose import JWTError, jwt
 
 # Importa la función de database.py
 # para conectarte a la DB.
@@ -42,7 +42,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
 # Esquema de seguridad HTTPBearer para extraer el token del header
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 # =================
@@ -135,6 +135,10 @@ def getCurrentUser(credentials: HTTPAuthorizationCredentials = Depends(security)
     # 3. Devuelve el usuario si todo está correcto
     # 4. Lanza error 401 si el token es inválido
 
+    # Si no vienen credenciales, credentials será None (auto_error=False).
+    if not credentials:
+        raise HTTPException(status_code=403, detail="Token faltante")
+
     # credentials.credentials contiene el token (sin el prefijo "Bearer")
     token = credentials.credentials
 
@@ -142,6 +146,6 @@ def getCurrentUser(credentials: HTTPAuthorizationCredentials = Depends(security)
     user = verify_token(token)
 
     if user is None:
-        raise HTTPException(status_code=401, detail="Token inválido o expirado")
+        raise HTTPException(status_code=403, detail="Token inválido o expirado")
 
     return user

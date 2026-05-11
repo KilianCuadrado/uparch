@@ -2,29 +2,30 @@
 # === IMPORTS NECESARIOS ===
 # ==========================
 
-# FastAPI es el framework principal para crear la API
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.middleware.cors import CORSMiddleware
-
 # Para manejar el ciclo de vida de la aplicación (startup/shutdown)
 from contextlib import asynccontextmanager
+
+# FastAPI es el framework principal para crear la API
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+# HTTPBearer y HTTPAuthorizationCredentials sirven para extraer el token JWT
+# del header "Authorization: Bearer <token>"
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 # Pydantic se usa para validar los datos que llegan del frontend
 # BaseModel es como un "molde" para definir qué campos esperas
 from pydantic import BaseModel
 
-# HTTPBearer y HTTPAuthorizationCredentials sirven para extraer el token JWT
-# del header "Authorization: Bearer <token>"
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-
 # Importamos las funciones de autenticación que ya creaste
-from auth import authenticate_user, create_access_token, verify_token
+from auth import authenticate_user, create_access_token, verify_token, hash_password
+import sqlite3
+
+# Importamos la función para inicializar la base de datos
+from database import init_db, get_connection
 
 # Importamos el router de files que ya tiene todos los endpoints CRUD de archivos
 from files import router as files_router
-
-# Importamos la función para inicializar la base de datos
-from database import init_db
 
 # ================================
 # === EVENTO AL INICIAR LA APP ===
@@ -193,6 +194,40 @@ async def login(request: LoginRequest):
     return LoginResponse(token=token, username=request.username)
 
 
+# ---- Auth endpoints compatible with tests (/auth/register, /auth/login)
+@app.post("/auth/register", status_code=201)
+async def register(request: LoginRequest):
+    """Register a new user. Returns 201 or 409 if user exists."""
+    # Ensure DB/tables exist before attempting insert (useful in tests)
+    init_db()
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        hashed = hash_password(request.password)
+        cursor.execute(
+            "INSERT INTO users (username, hashed_password) VALUES (?, ?)",
+            (request.username, hashed),
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.close()
+        raise HTTPException(status_code=409, detail="User already exists")
+    finally:
+        conn.close()
+
+    return {"message": "user created", "username": request.username}
+
+
+@app.post("/auth/login")
+async def auth_login(request: LoginRequest):
+    """Login endpoint returning `access_token` for compatibility with tests."""
+    user = authenticate_user(request.username, request.password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+    token = create_access_token(request.username)
+    return {"access_token": token}
+
+
 # ===== ENDPOINT PARA VERIFICAR SI EL TOKEN ES VÁLIDO =====
 @app.get("/verify")
 async def verify(user: dict = Depends(getCurrentUser)):
@@ -217,6 +252,8 @@ async def verify(user: dict = Depends(getCurrentUser)):
 from folders import router as folders_router
 
 app.include_router(files_router, prefix="/api", tags=["files"])
+# Also expose the same file routes under `/files/*` to match existing tests
+app.include_router(files_router, prefix="/files", tags=["files-alias"])
 
 app.include_router(folders_router)
 

@@ -17,30 +17,25 @@
 # una respuesta HTTP con código de error (404, 400, 401, etc.).
 # Por ejemplo: raise HTTPException(status_code=404, detail="Archivo no encontrado").
 
+import os
+import shutil
+
 # - Depends: Sirve para "inyectar" dependencias. Por ejemplo,
 # para decir "esta ruta necesita que el token sea válido", usas Depends(verify_token).
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, status
 from typing import Optional
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
+
+# - HTTPAuthorizationCredentials: Son las credenciales que extrae (el token).
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from auth import getCurrentUser
+from database import get_connection
 
 # - HTTPBearer: Es un esquema de seguridad que espera un token en el header
 # Authorization: Bearer <tu-token>. Es el estándar para JWT.
 
-# - HTTPAuthorizationCredentials: Son las credenciales que extrae (el token).
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-
-# Es una clase de FastAPI que envía un archivo como respuesta HTTP. El navegador lo descarga automáticamente.
-from fastapi.responses import FileResponse
-
-# - os: Sirve para manejar rutas de carpetas, crear directorios, etc.
-import os
-
-# - shutil: Es como copy pero en Python. Sirve para copiar archivos de un lugar a otro.
-# Se usará para guardar el archivo subido en la carpeta uploads/.
-import shutil
-
-# Importación de funciones de otros archivos
-from database import get_connection
-from auth import getCurrentUser
 
 # ==========================
 # === VARIABLES GLOBALES ===
@@ -65,9 +60,9 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 # ===== Funcion para subir un archivo a la carpeta del usuario. =====
-@router.post("/upload")
+@router.post("/upload", status_code=201)
 async def subir_archivo(
-    archivo: UploadFile = File(...),
+    file: UploadFile = File(...),
     folder_id: Optional[int] = Form(None),
     usuario: dict = Depends(getCurrentUser),
 ):
@@ -76,19 +71,19 @@ async def subir_archivo(
     # Validar tamaño de archivo (10MB = 10 * 1024 * 1024 bytes)
     MAX_FILE_SIZE = 10 * 1024 * 1024
     # Obtener el tamaño sin cargar todo el archivo en memoria
-    current_position = archivo.file.tell()
-    archivo.file.seek(0, os.SEEK_END)
-    file_size = archivo.file.tell()
-    archivo.file.seek(current_position)
+    current_position = file.file.tell()
+    file.file.seek(0, os.SEEK_END)
+    file_size = file.file.tell()
+    file.file.seek(current_position)
     if file_size > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=413, detail="Archivo demasiado grande. Máximo: 10MB"
         )
     # Resetear el puntero del archivo para guardarlo después
-    archivo.file.seek(0)
+    file.file.seek(0)
 
     # 1. Validar que se ha subido un archivo
-    if not archivo or not archivo.filename:
+    if not file or not file.filename:
         raise HTTPException(
             status_code=400, detail="No se ha proporcionado ningún archivo"
         )
@@ -117,10 +112,10 @@ async def subir_archivo(
     os.makedirs(user_dir, exist_ok=True)
 
     # 4. Guardar el archivo en la carpeta del usuario
-    ruta_completa = os.path.join(user_dir, archivo.filename)
+    ruta_completa = os.path.join(user_dir, file.filename)
 
     with open(ruta_completa, "wb") as archivo_destino:
-        shutil.copyfileobj(archivo.file, archivo_destino)
+        shutil.copyfileobj(file.file, archivo_destino)
 
     # 5. Obtener el tamany del archivo (después de guardarlo)
     tamany = os.path.getsize(ruta_completa)
@@ -134,15 +129,17 @@ async def subir_archivo(
         INSERT INTO files (user_id, folder_id, filename, original_filename, size)
         VALUES (?, ?, ?, ?, ?)
         """,
-        (usuario["id"], folder_id, archivo.filename, archivo.filename, tamany),
+        (usuario["id"], folder_id, file.filename, file.filename, tamany),
     )
+    file_id = cursor.lastrowid
     conn.commit()
     conn.close()
 
     # 7. Devolver información del archivo subido
     return {
         "mensaje": "Archivo subido",
-        "filename": archivo.filename,
+        "file_id": file_id,
+        "filename": file.filename,
         "size": tamany,
         "folder_id": folder_id,
     }

@@ -76,6 +76,10 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
       
+      - name: 🧭 Set PYTHONPATH to backend
+        run: |
+          echo "PYTHONPATH=$(pwd)/backend" >> $GITHUB_ENV
+
       - name: 📦 Instalar dependencias
         run: |
           cd backend

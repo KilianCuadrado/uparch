@@ -1,10 +1,18 @@
+import os
+import sys
+
+# Ensure the backend package folder is on sys.path so imports work
+# regardless of where pytest is invoked from.
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
 from fastapi.testclient import TestClient
 
-# Import `app` robustly so tests work whether pytest is run from
-# the repository root or from the backend/ folder.
+# Try import from the local module first, fall back to package import
 try:
     from main import app
-except ModuleNotFoundError:
+except Exception:
     from backend.main import app
 
 
