@@ -30,22 +30,19 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 # para conectarte a la DB.
 from database import get_connection
 
-
-
 # ==========================
 # === VARIABLES GLOBALES ===
 # ==========================
 
 
 # Clave secreta para firmar los tokens JWT
-SECRET_KEY = "dro1oXi-IIMg3mrB8zj7roN12nb4PUwV5D4XGgliS9Y" # Cambiar a secrets.propoerties para no tenerla visiblen en GitHub
+SECRET_KEY = "dro1oXi-IIMg3mrB8zj7roN12nb4PUwV5D4XGgliS9Y"  # Cambiar a secrets.propoerties para no tenerla visiblen en GitHub
 ALGORITHM = "HS256"
 # Tiempo de expiración del token (en horas)
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
 # Esquema de seguridad HTTPBearer para extraer el token del header
 security = HTTPBearer()
-
 
 
 # =================
@@ -58,13 +55,15 @@ def hash_password(password: str) -> str:
     # encode('utf-8') convierte el string a bytes (bcrypt necesita bytes)
     # gensalt() genera una "sal" aleatoria para mayor seguridad
     # decode('utf-8') convierte el resultado de bytes a string para guardar en la DB
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     # Compara la contraseña con el hash guardado en la DB
     # checkpw devuelve True si coinciden, False si no
-    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    return bcrypt.checkpw(
+        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+    )
 
 
 def get_user(username: str):
@@ -76,7 +75,7 @@ def get_user(username: str):
     # Nunca metas variables directamente en una query
     cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
 
-    user = cursor.fetchone() # Devuelve solo un resultado, ya que el username es único.
+    user = cursor.fetchone()  # Devuelve solo un resultado, ya que el username es único.
     conn.close()
     return user
 
@@ -97,15 +96,16 @@ def authenticate_user(username: str, password: str):
 def create_access_token(username: str) -> str:
     # Definimos el contenido del token y su fecha de expiración
     data = {
-        "sub": username, # Es el campo estándar de JWT para identificar al usuario, viene de "subject".
-
+        "sub": username,  # Es el campo estándar de JWT para identificar al usuario, viene de "subject".
         # Fecha de expiración del token.
         # Después de 24 horas el token deja de ser válido
         # y el usuario tendrá que hacer login de nuevo.
-        "exp": datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
+        "exp": datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS),
     }
     # Creamos y devolvemos el token firmado
-    return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM) # Firma el token con tu SECRET_KEY para que nadie pueda manipularlo.
+    return jwt.encode(
+        data, SECRET_KEY, algorithm=ALGORITHM
+    )  # Firma el token con tu SECRET_KEY para que nadie pueda manipularlo.
 
 
 def verify_token(token: str):
@@ -128,7 +128,7 @@ def getCurrentUser(credentials: HTTPAuthorizationCredentials = Depends(security)
 
     # Función de dependencia que extrae y verifica el token JWT automáticamente.
     # Se usa en los endpoints protegidos con Depends(getCurrentUser).
-    
+
     # Esta función:
     # 1. Extrae el token del header "Authorization: Bearer <token>"
     # 2. Verifica que el token sea válido
@@ -137,14 +137,11 @@ def getCurrentUser(credentials: HTTPAuthorizationCredentials = Depends(security)
 
     # credentials.credentials contiene el token (sin el prefijo "Bearer")
     token = credentials.credentials
-    
+
     # verify_token devuelve el usuario si el token es válido, o None si no lo es
     user = verify_token(token)
-    
+
     if user is None:
-        raise HTTPException(
-            status_code=401,
-            detail="Token inválido o expirado"
-        )
-    
+        raise HTTPException(status_code=401, detail="Token inválido o expirado")
+
     return user

@@ -26,13 +26,13 @@ from files import router as files_router
 # Importamos la función para inicializar la base de datos
 from database import init_db
 
-
 # ================================
 # === EVENTO AL INICIAR LA APP ===
 # ================================
 
 # Lifespan event handler - reemplaza al deprecado on_event("startup")
 # Se ejecuta cuando el servidor arranca y cuando se apaga.
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -52,6 +52,7 @@ async def lifespan(_app: FastAPI):
     # === SHUTDOWN (opcional) ===
     print("👋 Cerrando UpArch API...")
 
+
 # ====================
 # === CREAR LA APP ===
 # ====================
@@ -62,7 +63,7 @@ app = FastAPI(
     title="UpArch API",
     description="API para almacenamiento de archivos en red local",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # =======================
@@ -75,7 +76,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En producción, cambia "*" por la IP específica de tu red local
+    allow_origins=[
+        "*"
+    ],  # En producción, cambia "*" por la IP específica de tu red local
     allow_credentials=True,  # Permite enviar cookies y headers de autenticación
     allow_methods=["*"],  # Permite todos los métodos HTTP (GET, POST, DELETE, etc.)
     allow_headers=["*"],  # Permite todos los headers (incluido Authorization)
@@ -98,6 +101,7 @@ app.add_middleware(
 
 # Estos "modelos" definen qué datos esperas del frontend.
 # Pydantic valida automáticamente que los datos sean correctos.
+
 
 class LoginRequest(BaseModel):
     username: str
@@ -127,6 +131,7 @@ security = HTTPBearer()
 # Extrae el token del header, lo verifica, y devuelve el usuario.
 # Si el token no es válido, lanza un error 401 (no autorizado).
 
+
 def getCurrentUser(credentials: HTTPAuthorizationCredentials = Depends(security)):
 
     # Extrae y verifica el token JWT del header Authorization.
@@ -140,10 +145,7 @@ def getCurrentUser(credentials: HTTPAuthorizationCredentials = Depends(security)
     user = verify_token(token)
 
     if user is None:
-        raise HTTPException(
-            status_code=401,
-            detail="Token inválido o expirado"
-        )
+        raise HTTPException(status_code=401, detail="Token inválido o expirado")
 
     return user
 
@@ -152,16 +154,15 @@ def getCurrentUser(credentials: HTTPAuthorizationCredentials = Depends(security)
     # ==========================
 
     # ===== RUTA RAÍZ (para verificar que el servidor funciona) =====
+
+
 @app.get("/")
 async def root():
     """
     Endpoint de prueba. Devuelve un mensaje simple.
     Útil para verificar que el servidor está corriendo.
     """
-    return {
-        "mensaje": "UpArch API está funcionando",
-        "version": "1.0.0"
-    }
+    return {"mensaje": "UpArch API está funcionando", "version": "1.0.0"}
 
 
 # ===== ENDPOINT DE LOGIN =====
@@ -184,18 +185,12 @@ async def login(request: LoginRequest):
 
     # 2. Si la autenticación falla, devolver error 401
     if not user:
-        raise HTTPException(
-            status_code=401,
-            detail="Usuario o contraseña incorrectos"
-        )
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
     # 3. Si es correcto, crear un token JWT
     token = create_access_token(request.username)
 
     # 4. Devolver el token y el username
-    return LoginResponse(
-        token=token,
-        username=request.username
-    )
+    return LoginResponse(token=token, username=request.username)
 
 
 # ===== ENDPOINT PARA VERIFICAR SI EL TOKEN ES VÁLIDO =====
@@ -210,7 +205,7 @@ async def verify(user: dict = Depends(getCurrentUser)):
     return {
         "mensaje": "Token válido",
         "username": user["username"],
-        "user_id": user["id"]
+        "user_id": user["id"],
     }
 
 
@@ -221,15 +216,9 @@ async def verify(user: dict = Depends(getCurrentUser)):
 # Aquí incluimos el router de files.py y folders.py
 from folders import router as folders_router
 
-app.include_router(
-    files_router,
-    prefix="/api",
-    tags=["files"]
-)
+app.include_router(files_router, prefix="/api", tags=["files"])
 
-app.include_router(
-    folders_router
-)
+app.include_router(folders_router)
 
 # ================================
 # === EJECUTAR EL SERVIDOR ===
@@ -247,5 +236,5 @@ if __name__ == "__main__":
         app,
         host="0.0.0.0",  # 0.0.0.0 = accesible desde cualquier dispositivo en la red local
         port=8000,
-        reload=True  # Recarga automáticamente cuando cambies el código
+        reload=True,  # Recarga automáticamente cuando cambies el código
     )

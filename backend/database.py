@@ -5,19 +5,21 @@
 import sqlite3
 import os
 
-
 # ==========================
 # === VARIABLES GLOBALES ===
 # ==========================
 
 # Permite usar una variable de entorno para definir la ruta de la base de datos (muy útil para Docker).
 # Por defecto (si no hay variable), asume que la base de datos está un nivel arriba de esta carpeta.
-DB_PATH = os.getenv("UPARCH_DB_PATH", os.path.join(os.path.dirname(__file__), "..", "uparch.db"))
+DB_PATH = os.getenv(
+    "UPARCH_DB_PATH", os.path.join(os.path.dirname(__file__), "..", "uparch.db")
+)
 
 
 # =================
 # === FUNCIONES ===
 # =================
+
 
 # conn.row_factory = sqlite3.Row hace que los resultados de las
 # consultas se puedan acceder por nombre de columna
@@ -35,7 +37,9 @@ def get_connection():
 def init_db():
     # Abrimos una conexión a la base de datos y obtenemos un cursor para ejecutar consultas.
     conn = get_connection()
-    cursor = conn.cursor() # Puntero para ejecutar consultas — es como el bolígrafo con el que escribes y lees dentro.
+    cursor = (
+        conn.cursor()
+    )  # Puntero para ejecutar consultas — es como el bolígrafo con el que escribes y lees dentro.
 
     # Crear tabla de usuarios en caso de que no exista
     cursor.execute("""
@@ -81,8 +85,12 @@ def init_db():
     result = cursor.fetchone()
     if result["count"] == 0:
         from auth import hash_password
+
         hashed = hash_password("1234")
-        cursor.execute("INSERT INTO users (username, hashed_password) VALUES (?, ?)", ("admin", hashed))
+        cursor.execute(
+            "INSERT INTO users (username, hashed_password) VALUES (?, ?)",
+            ("admin", hashed),
+        )
         print("👤 Creado usuario administrador por defecto (admin:1234)")
 
     # Guardar los cambios en la base de datos

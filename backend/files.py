@@ -42,7 +42,6 @@ import shutil
 from database import get_connection
 from auth import getCurrentUser
 
-
 # ==========================
 # === VARIABLES GLOBALES ===
 # ==========================
@@ -52,7 +51,9 @@ router = APIRouter()
 
 # Carpeta donde se guardarán los archivos. Se puede configurar mediante variables de entorno para Docker.
 # Por defecto asume que existe en un nivel superior a la carpeta backend.
-UPLOAD_DIR = os.getenv("UPARCH_UPLOAD_DIR", os.path.join(os.path.dirname(__file__), "..", "uploads"))
+UPLOAD_DIR = os.getenv(
+    "UPARCH_UPLOAD_DIR", os.path.join(os.path.dirname(__file__), "..", "uploads")
+)
 
 # Asegurar que la carpeta existe
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -61,6 +62,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 # =================
 # === FUNCIONES ===
 # =================
+
 
 # ===== Funcion para subir un archivo a la carpeta del usuario. =====
 @router.post("/upload")
@@ -80,16 +82,16 @@ async def subir_archivo(
     archivo.file.seek(current_position)
     if file_size > MAX_FILE_SIZE:
         raise HTTPException(
-             status_code=413,
-             detail="Archivo demasiado grande. Máximo: 10MB"
-         )
+            status_code=413, detail="Archivo demasiado grande. Máximo: 10MB"
+        )
     # Resetear el puntero del archivo para guardarlo después
     archivo.file.seek(0)
 
-
     # 1. Validar que se ha subido un archivo
     if not archivo or not archivo.filename:
-        raise HTTPException(status_code=400, detail="No se ha proporcionado ningún archivo")
+        raise HTTPException(
+            status_code=400, detail="No se ha proporcionado ningún archivo"
+        )
 
     # 2. Obtener el username del usuario
     username = usuario["username"]
@@ -101,12 +103,11 @@ async def subir_archivo(
             cursor = conn.cursor()
             cursor.execute(
                 "SELECT id FROM folders WHERE id = ? AND user_id = ?",
-                (folder_id, usuario["id"])
+                (folder_id, usuario["id"]),
             )
             if not cursor.fetchone():
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Folder no encontrado"
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Folder no encontrado"
                 )
         finally:
             conn.close()
@@ -133,7 +134,7 @@ async def subir_archivo(
         INSERT INTO files (user_id, folder_id, filename, original_filename, size)
         VALUES (?, ?, ?, ?, ?)
         """,
-        (usuario["id"], folder_id, archivo.filename, archivo.filename, tamany)
+        (usuario["id"], folder_id, archivo.filename, archivo.filename, tamany),
     )
     conn.commit()
     conn.close()
@@ -143,8 +144,9 @@ async def subir_archivo(
         "mensaje": "Archivo subido",
         "filename": archivo.filename,
         "size": tamany,
-        "folder_id": folder_id
+        "folder_id": folder_id,
     }
+
 
 # ===== Funcion para listar los archivos de el usuario autenticado. =====
 # NOTA: @router.get("/files") NO es una carpeta real del sistema de archivos.
@@ -153,8 +155,7 @@ async def subir_archivo(
 # No tiene relación con la carpeta uploads/, es una URL virtual.
 @router.get("/files")
 async def listar_archivos(
-    folder_id: Optional[int] = None,
-    usuario: dict = Depends(getCurrentUser)
+    folder_id: Optional[int] = None, usuario: dict = Depends(getCurrentUser)
 ):
 
     # Lista todos los archivos del usuario autenticado.
@@ -170,12 +171,12 @@ async def listar_archivos(
     if folder_id is None:
         cursor.execute(
             "SELECT * FROM files WHERE user_id = ? AND folder_id IS NULL ORDER BY upload_time DESC",
-            (user_id,)
+            (user_id,),
         )
     else:
         cursor.execute(
             "SELECT * FROM files WHERE user_id = ? AND folder_id = ? ORDER BY upload_time DESC",
-            (user_id, folder_id)
+            (user_id, folder_id),
         )
 
     archivos = cursor.fetchall()  # fetchall() devuelve todos los resultados
@@ -184,23 +185,23 @@ async def listar_archivos(
     # 3. Convertir a lista de diccionarios (más fácil para el frontend)
     resultado = []
     for archivo in archivos:
-        resultado.append({
-            "id": archivo["id"],
-            "filename": archivo["filename"],
-            "original_filename": archivo["original_filename"],
-            "size": archivo["size"],
-            "upload_time": archivo["upload_time"],
-            "folder_id": archivo["folder_id"]
-        })
+        resultado.append(
+            {
+                "id": archivo["id"],
+                "filename": archivo["filename"],
+                "original_filename": archivo["original_filename"],
+                "size": archivo["size"],
+                "upload_time": archivo["upload_time"],
+                "folder_id": archivo["folder_id"],
+            }
+        )
 
     return {"archivos": resultado}
 
+
 # ===== Funcion para descargar un archivo específico por su ID. =====
 @router.get("/files/{id}")
-async def descargar_archivo(
-        id: int,
-        usuario: dict = Depends(getCurrentUser)
-):
+async def descargar_archivo(id: int, usuario: dict = Depends(getCurrentUser)):
 
     # Descarga un archivo específico por su ID.
     # Solo permite descargar archivos del usuario logueado.
@@ -213,7 +214,7 @@ async def descargar_archivo(
 
     cursor.execute(
         "SELECT * FROM files WHERE id = ? AND user_id = ?",
-        (id, user_id)
+        (id, user_id),
         # Importante: verificar que es del usuario
     )
 
@@ -230,23 +231,25 @@ async def descargar_archivo(
 
     # 5. Verificar que el archivo existe físicamente
     if not os.path.exists(ruta_archivo):
-        raise HTTPException(status_code=404, detail="El archivo no existe en el servidor")
+        raise HTTPException(
+            status_code=404, detail="El archivo no existe en el servidor"
+        )
 
         # 6. Devolver el archivo como descarga
     return FileResponse(
         path=ruta_archivo,
         filename=archivo["original_filename"],
-        media_type="application/octet-stream"
+        media_type="application/octet-stream",
         # Fuerza la descarga
     )
 
 
 @router.delete("/files/{id}")
 async def eliminar_archivo(
-        id: int,
-        usuario: dict = Depends(getCurrentUser)
-        # Elimina un archivo por su ID.
-        # Solo permite eliminar archivos del usuario logueado.
+    id: int,
+    usuario: dict = Depends(getCurrentUser),
+    # Elimina un archivo por su ID.
+    # Solo permite eliminar archivos del usuario logueado.
 ):
 
     user_id = usuario["id"]
@@ -255,10 +258,7 @@ async def eliminar_archivo(
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute(
-        "SELECT * FROM files WHERE id = ? AND user_id = ?",
-        (id, user_id)
-    )
+    cursor.execute("SELECT * FROM files WHERE id = ? AND user_id = ?", (id, user_id))
 
     archivo = cursor.fetchone()
 
@@ -284,63 +284,58 @@ async def eliminar_archivo(
 async def move_file_to_folder(
     id: int,
     folder_id: Optional[int] = None,  # None = mover a raíz
-    current_user: dict = Depends(getCurrentUser)
+    current_user: dict = Depends(getCurrentUser),
 ):
     """
     Mover un archivo a un folder.
     """
-    
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Verificar que el archivo existe y es del usuario
         cursor.execute(
             "SELECT original_filename FROM files WHERE id = ? AND user_id = ?",
-            (id, current_user["id"])
+            (id, current_user["id"]),
         )
         file_data = cursor.fetchone()
-        
+
         if not file_data:
             conn.close()
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Archivo no encontrado"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Archivo no encontrado"
             )
-        
+
         # Si se especificó folder, verificar que existe
         if folder_id:
             cursor.execute(
                 "SELECT id FROM folders WHERE id = ? AND user_id = ?",
-                (folder_id, current_user["id"])
+                (folder_id, current_user["id"]),
             )
             if not cursor.fetchone():
                 conn.close()
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Folder destino no encontrado"
+                    detail="Folder destino no encontrado",
                 )
-        
+
         # Mover archivo
-        cursor.execute(
-            "UPDATE files SET folder_id = ? WHERE id = ?",
-            (folder_id, id)
-        )
+        cursor.execute("UPDATE files SET folder_id = ? WHERE id = ?", (folder_id, id))
         conn.commit()
         conn.close()
-        
+
         return {
             "message": "Archivo movido exitosamente",
             "file_id": id,
             "filename": file_data["original_filename"],
-            "folder_id": folder_id
+            "folder_id": folder_id,
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error al mover archivo: {str(e)}"
+            detail=f"Error al mover archivo: {str(e)}",
         )
-
