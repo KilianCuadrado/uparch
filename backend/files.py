@@ -27,7 +27,6 @@ from fastapi.responses import FileResponse
 from auth import getCurrentUser
 from database import get_connection
 
-
 # ==========================
 # === VARIABLES GLOBALES ===
 # ==========================
